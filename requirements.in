@@ -1,0 +1,11 @@
+# requirements.in
+-e git+https://github.com/skellet0r/brownie@a0c1262b9fdef0d211f7a45bef081271fd876425#egg=eth-brownie
+black
+flake8
+isort
+loguru
+numpy
+pandas
+pip-tools
+pre-commit
+retry
