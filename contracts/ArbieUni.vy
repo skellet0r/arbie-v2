@@ -181,7 +181,8 @@ def arbitrage_curve_univ2(
     _min_dy: uint256,
     _deadline: uint256,
     _path: address[MAX_HOPS],
-    _min_output: uint256
+    _min_output: uint256,
+    _to: address = msg.sender
 ):
     assert block.timestamp <= _deadline
 
@@ -214,7 +215,7 @@ def arbitrage_curve_univ2(
         coin_a = coin_b
 
     assert dy > _min_output
-    ERC20(coin_a).transfer(msg.sender, dy)
+    ERC20(coin_a).transfer(_to, dy)
 
 
 @external
@@ -225,7 +226,8 @@ def arbitrage_univ2_curve(
     _min_dy: uint256,
     _deadline: uint256,
     _path: address[MAX_HOPS],
-    _min_output: uint256
+    _min_output: uint256,
+    _to: address = msg.sender
 ):
     assert block.timestamp <= _deadline
 
@@ -259,7 +261,7 @@ def arbitrage_univ2_curve(
     assert dy > _min_output
 
     CryptoSwap(CRYPTOSWAP_ADDR).exchange(_i, _j, dy, _min_dy)
-    ERC20(coin_a).transfer(msg.sender, ERC20(coin_a).balanceOf(self))
+    ERC20(coin_a).transfer(_to, ERC20(coin_a).balanceOf(self))
 
 
 @external
@@ -270,7 +272,8 @@ def arbitrage_curve_univ3(
     _min_dy: uint256,
     _path: Bytes[2048],
     _deadline: uint256,
-    _min_output: uint256
+    _min_output: uint256,
+    _to: address = msg.sender
 ):
     CryptoSwap(CRYPTOSWAP_ADDR).exchange(_i, _j, _dx, _min_dy)
     path_length: uint256 = len(_path)
@@ -279,11 +282,10 @@ def arbitrage_curve_univ3(
     if extra != 0:
         path = concat(_path, EMPTY_BYTES32)
         path = slice(path, 0, path_length + 32 - extra)
-    recipient: address = msg.sender
     call_data: Bytes[4096] = concat(
         convert(32, bytes32),
         convert(160, bytes32),
-        convert(recipient, bytes32),
+        convert(_to, bytes32),
         convert(_deadline, bytes32),
         convert(ERC20(self.coins[_j]).balanceOf(self), bytes32),
         convert(_min_output, bytes32),
