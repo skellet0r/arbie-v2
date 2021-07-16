@@ -293,3 +293,36 @@ def arbitrage_curve_univ3(
         path
     )
     raw_call(UNIV3_ROUTER_ADDR, concat(0xc04b8d59, call_data))
+
+
+@external
+def arbitrage_univ3_curve(
+    _i: uint256,
+    _j: uint256,
+    _dx: uint256,
+    _min_dy: uint256,
+    _path: Bytes[2048],
+    _deadline: uint256,
+    _min_output: uint256,
+    _to: address = msg.sender
+):
+    path_length: uint256 = len(_path)
+    extra: uint256 = (path_length % 32)
+    coin: address = self.coins[_j]
+    path: Bytes[2080] = _path
+    if extra != 0:
+        path = concat(_path, EMPTY_BYTES32)
+        path = slice(path, 0, path_length + 32 - extra)
+    call_data: Bytes[4096] = concat(
+        convert(32, bytes32),
+        convert(160, bytes32),
+        convert(self, bytes32),
+        convert(_deadline, bytes32),
+        convert(ERC20(coin).balanceOf(self), bytes32),
+        convert(_min_output, bytes32),
+        convert(len(_path), bytes32),
+        path
+    )
+    raw_call(UNIV3_ROUTER_ADDR, concat(0xc04b8d59, call_data))
+    CryptoSwap(CRYPTOSWAP_ADDR).exchange(_i, _j, _dx, _min_dy)
+    ERC20(coin).transfer(_to, ERC20(coin).balanceOf(self))
