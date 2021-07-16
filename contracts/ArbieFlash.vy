@@ -174,3 +174,86 @@ def calc_arbitrage_univ3_curve(
     """
     dy: uint256 = Quoter(UNIV3_QUOTER_ADDR).quoteExactInput(_path, _dx)
     return  CryptoSwap(CRYPTOSWAP_ADDR).get_dy(_i, _j, dy)
+
+
+@external
+def arbitrage_curve_univ2(
+    _i: uint256,
+    _j: uint256,
+    _dx: uint256,
+    _min_dy: uint256,
+    _path: address[MAX_HOPS],
+    _min_output: uint256
+):
+    CryptoSwap(CRYPTOSWAP_ADDR).exchange(_i, _j, _dx, _min_dy)
+    coin_a: address = self.coins[_j]
+    coin_b: address = ZERO_ADDRESS
+    pair_addr: address = ZERO_ADDRESS
+    min_dy: uint256 = 0
+    dy: uint256 = ERC20(coin_a).balanceOf(self)
+
+    coin_a_reserves: uint256 = 0
+    coin_b_reserves: uint256 = 0
+    block_timestamp_last: uint256 = 0
+    for i in range(MAX_HOPS):
+        coin_b = _path[i]
+        if coin_b == ZERO_ADDRESS:
+            break
+        pair_addr = UniV2Factory(UNIV2_FACTORY_ADDR).getPair(coin_a, coin_b)
+        ERC20(coin_a).transfer(pair_addr, dy)
+        if convert(coin_a, uint256) < convert(coin_b, uint256):
+            coin_a_reserves, coin_b_reserves, block_timestamp_last = UniV2Pair(pair_addr).getReserves()
+            min_dy = UniV2Router(UNIV2_ROUTER_ADDR).getAmountOut(dy, coin_a_reserves, coin_b_reserves)
+            UniV2Pair(pair_addr).swap(0, min_dy, self, b"")
+        else:
+            coin_b_reserves, coin_a_reserves, block_timestamp_last = UniV2Pair(pair_addr).getReserves()
+            min_dy = UniV2Router(UNIV2_ROUTER_ADDR).getAmountOut(dy, coin_b_reserves, coin_a_reserves)
+            UniV2Pair(pair_addr).swap(min_dy, 0, self, b"")
+
+        dy = ERC20(coin_b).balanceOf(self)
+        coin_a = coin_b
+
+    assert dy > _min_output
+    ERC20(coin_a).transfer(msg.sender, dy)
+
+
+@external
+def arbitrage_univ2_curve(
+    _i: uint256,
+    _j: uint256,
+    _dx: uint256,
+    _min_dy: uint256,
+    _path: address[MAX_HOPS],
+    _min_output: uint256
+):
+    coin_a: address = _path[0]
+    coin_b: address = ZERO_ADDRESS
+    pair_addr: address = ZERO_ADDRESS
+    min_dy: uint256 = 0
+    dy: uint256 = _dx
+
+    coin_a_reserves: uint256 = 0
+    coin_b_reserves: uint256 = 0
+    block_timestamp_last: uint256 = 0
+    for i in range(1, MAX_HOPS):
+        coin_b = _path[i]
+        if coin_b == ZERO_ADDRESS:
+            break
+        pair_addr = UniV2Factory(UNIV2_FACTORY_ADDR).getPair(coin_a, coin_b)
+        ERC20(coin_a).transfer(pair_addr, dy)
+        if convert(coin_a, uint256) < convert(coin_b, uint256):
+            coin_a_reserves, coin_b_reserves, block_timestamp_last = UniV2Pair(pair_addr).getReserves()
+            min_dy = UniV2Router(UNIV2_ROUTER_ADDR).getAmountOut(dy, coin_a_reserves, coin_b_reserves)
+            UniV2Pair(pair_addr).swap(0, min_dy, self, b"")
+        else:
+            coin_b_reserves, coin_a_reserves, block_timestamp_last = UniV2Pair(pair_addr).getReserves()
+            min_dy = UniV2Router(UNIV2_ROUTER_ADDR).getAmountOut(dy, coin_b_reserves, coin_a_reserves)
+            UniV2Pair(pair_addr).swap(min_dy, 0, self, b"")
+
+        dy = ERC20(coin_b).balanceOf(self)
+        coin_a = coin_b
+
+    assert dy > _min_output
+
+    CryptoSwap(CRYPTOSWAP_ADDR).exchange(_i, _j, dy, _min_dy)
+    ERC20(coin_a).transfer(msg.sender, ERC20(coin_a).balanceOf(self))
