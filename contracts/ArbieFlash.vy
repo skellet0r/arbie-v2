@@ -65,7 +65,7 @@ def calc_arbitrage_curve_univ2(
     _j: uint256,
     _dx: uint256,
     _path: address[MAX_HOPS],
-) -> uint256:
+) -> (uint256, uint256):
     """
     @notice Calculate output from buying on Curve and selling on UniswapV2
     @param _i The index of the input coin for the initial trade on Curve
@@ -76,6 +76,7 @@ def calc_arbitrage_curve_univ2(
         the same address as the coin at index `_i` in Curve Crypto Swap.
     """
     dy: uint256 = CryptoSwap(CRYPTOSWAP_ADDR).get_dy(_i, _j, _dx)
+    curve_min_dy: uint256 = dy
     coin_a: address = self.coins[_j]
     coin_b: address = ZERO_ADDRESS
     pair_addr: address = ZERO_ADDRESS
@@ -92,7 +93,7 @@ def calc_arbitrage_curve_univ2(
         dy = UniV2Router(UNIV2_ROUTER_ADDR).getAmountOut(dy, coin_a_reserves, coin_b_reserves)
         coin_a = coin_b
 
-    return dy
+    return curve_min_dy, dy
 
 
 @view
@@ -102,7 +103,7 @@ def calc_arbitrage_univ2_curve(
     _j: uint256,
     _dx: uint256,
     _path: address[MAX_HOPS],
-) -> uint256:
+) -> (uint256, uint256):
     """
     @notice Calculate output from buying on UniswapV2 and selling on Curve
     @param _i The index of the input coin for the final trade on Curve
@@ -130,8 +131,9 @@ def calc_arbitrage_univ2_curve(
         coin_a_reserves, coin_b_reserves, block_timestamp_last = UniV2Pair(pair_addr).getReserves()
         dy = UniV2Router(UNIV2_ROUTER_ADDR).getAmountOut(dy, coin_a_reserves, coin_b_reserves)
 
+    univ2_min_amount: uint256 = dy
     dy = CryptoSwap(CRYPTOSWAP_ADDR).get_dy(_i, _j, dy)
-    return dy
+    return univ2_min_amount, dy
 
 
 @external
