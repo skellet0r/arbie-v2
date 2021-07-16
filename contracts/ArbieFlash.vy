@@ -9,6 +9,7 @@ CRYPTOSWAP_ADDR: constant(address) = 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46
 UNIV2_FACTORY_ADDR: constant(address) = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
 UNIV2_ROUTER_ADDR: constant(address) = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
 UNIV3_QUOTER_ADDR: constant(address) = 0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6
+UNIV3_ROUTER_ADDR: constant(address) = 0xE592427A0AEce92De3Edee1F18E0157C05861564
 MAX_HOPS: constant(uint256) = 25
 N_COINS: constant(uint256) = 3
 
@@ -182,9 +183,12 @@ def arbitrage_curve_univ2(
     _j: uint256,
     _dx: uint256,
     _min_dy: uint256,
+    _deadline: uint256,
     _path: address[MAX_HOPS],
     _min_output: uint256
 ):
+    assert block.timestamp <= _deadline
+
     CryptoSwap(CRYPTOSWAP_ADDR).exchange(_i, _j, _dx, _min_dy)
     coin_a: address = self.coins[_j]
     coin_b: address = ZERO_ADDRESS
@@ -223,9 +227,12 @@ def arbitrage_univ2_curve(
     _j: uint256,
     _dx: uint256,
     _min_dy: uint256,
+    _deadline: uint256,
     _path: address[MAX_HOPS],
     _min_output: uint256
 ):
+    assert block.timestamp <= _deadline
+
     coin_a: address = _path[0]
     coin_b: address = ZERO_ADDRESS
     pair_addr: address = ZERO_ADDRESS
