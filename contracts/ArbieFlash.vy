@@ -142,7 +142,7 @@ def calc_arbitrage_curve_univ3(
     _j: uint256,
     _dx: uint256,
     _path: Bytes[2048],
-) -> uint256:
+) -> (uint256, uint256):
     """
     @notice Calculate output from buying on Curve and selling on UniswapV3
     @dev Off-chain calls should change the stateMutability for this function
@@ -153,7 +153,7 @@ def calc_arbitrage_curve_univ3(
     @param _path Sequence of address + fee (uint24) + address passed to the Uniswap V3 Quoter
     """
     dy: uint256 = CryptoSwap(CRYPTOSWAP_ADDR).get_dy(_i, _j, _dx)
-    return Quoter(UNIV3_QUOTER_ADDR).quoteExactInput(_path, dy)
+    return (dy, Quoter(UNIV3_QUOTER_ADDR).quoteExactInput(_path, dy))
 
 
 @external
@@ -162,7 +162,7 @@ def calc_arbitrage_univ3_curve(
     _j: uint256,
     _dx: uint256,
     _path: Bytes[2048],
-) -> uint256:
+) -> (uint256, uint256):
     """
     @notice Calculate output from buying on UniswapV3 and selling on Curve
     @dev Off-chain calls should change the stateMutability for this function
@@ -173,7 +173,7 @@ def calc_arbitrage_univ3_curve(
     @param _path Sequence of address + fee (uint24) + address passed to the Uniswap V3 Quoter
     """
     dy: uint256 = Quoter(UNIV3_QUOTER_ADDR).quoteExactInput(_path, _dx)
-    return  CryptoSwap(CRYPTOSWAP_ADDR).get_dy(_i, _j, dy)
+    return  (dy, CryptoSwap(CRYPTOSWAP_ADDR).get_dy(_i, _j, dy))
 
 
 @external
