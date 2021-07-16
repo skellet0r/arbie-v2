@@ -14,14 +14,6 @@ MAX_HOPS: constant(uint256) = 25
 N_COINS: constant(uint256) = 3
 
 
-struct ExactInputParams:
-    path: Bytes[2048]  # sequence of tightly packed (address + uint24 + address)
-    recipient: address
-    deadline: uint256
-    amountIn: uint256
-    amountOutMinimum: uint256
-
-
 interface CryptoSwap:
     def coins(i: uint256) -> address: view
     def exchange(i: uint256, j: uint256, dx: uint256, min_dy: uint256): nonpayable
@@ -55,8 +47,12 @@ coins: address[N_COINS]
 
 @external
 def __init__():
+    coin: address = ZERO_ADDRESS
     for i in range(N_COINS):
-        self.coins[i] = CryptoSwap(CRYPTOSWAP_ADDR).coins(i)
+        coin = CryptoSwap(CRYPTOSWAP_ADDR).coins(i)
+        self.coins[i] = coin
+        ERC20(coin).approve(CRYPTOSWAP_ADDR, MAX_UINT256)
+        ERC20(coin).approve(UNIV3_ROUTER_ADDR, MAX_UINT256)
 
 
 @view
